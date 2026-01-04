@@ -1,0 +1,5 @@
+{
+  "name": "Sistema de Gestão de Avaliação de Alunos",
+  "description": "Um sistema completo para gerir a matrícula e avaliação de alunos do ensino primário em Angola, da 1ª à 6ª classe. Inclui funcionalidades para registo de notas trimestrais, cálculo de médias e geração de pautas finais conforme as regras do sistema de ensino.",
+  "requestFramePermissions": []
+}
