@@ -1,0 +1,189 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Fields: uid, name, email, role (admin, teacher, parent), createdAt
+    //
+    // Collection: students
+    // Fields: id, name, gender, birthDate, fatherName, motherName, birthProvince, birthMunicipality, idDocumentNumber, idDocumentIssueDate, guardianContact, parentId, createdAt
+    //
+    // Collection: enrollments
+    // Fields: academicYear, studentId, gradeLevel, section, status
+    //
+    // Collection: teachers
+    // Fields: userId, name, subject, phone
+    //
+    // Collection: classes
+    // Fields: name, gradeLevel, teacherId, year, section
+    //
+    // Collection: gradeEntries
+    // Fields: studentId, enrollmentId, subject, term, mac, npt, mt
+    //
+    // Collection: finalGrades
+    // Fields: studentId, enrollmentId, subject, mt1, mt2, mt3, mfd, ne, cf, nr, cfd
+    //
+    // Collection: attendance
+    // Fields: studentId, enrollmentId, date, status (present, absent, late)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+        (request.auth.token.email == "OrlandoJo31@gmail.com" && request.auth.token.email_verified == true)
+      );
+    }
+
+    function isTeacher() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
+    }
+
+    function isParent() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'parent';
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['uid', 'name', 'email', 'role', 'createdAt']) &&
+             data.uid is string && data.name is string && data.name.size() > 0 &&
+             isValidEmail(data.email) &&
+             data.role in ['admin', 'teacher', 'parent'];
+    }
+
+    function isValidStudent(data) {
+      return hasOnlyAllowedFields(['id', 'name', 'gender', 'birthDate', 'fatherName', 'motherName', 'birthProvince', 'birthMunicipality', 'idDocumentNumber', 'idDocumentIssueDate', 'guardianContact', 'parentId', 'createdAt']) &&
+             data.id is string && data.name is string && data.name.size() > 0 &&
+             data.gender in ['M', 'F'] &&
+             data.birthDate is string &&
+             data.guardianContact is string;
+    }
+
+    function isValidEnrollment(data) {
+      return hasOnlyAllowedFields(['academicYear', 'studentId', 'gradeLevel', 'section', 'status']) &&
+             data.academicYear is int && data.studentId is string &&
+             data.gradeLevel >= 1 && data.gradeLevel <= 6 &&
+             data.section is string &&
+             data.status in ['active', 'transferred', 'dropped'];
+    }
+
+    function isValidClass(data) {
+      return hasOnlyAllowedFields(['name', 'gradeLevel', 'teacherId', 'year', 'section']) &&
+             data.name is string && data.gradeLevel is int && data.year is int && data.section is string;
+    }
+
+    function isValidGradeEntry(data) {
+      return hasOnlyAllowedFields(['studentId', 'enrollmentId', 'subject', 'term', 'mac', 'npt', 'mt']) &&
+             data.studentId is string && data.enrollmentId is string &&
+             data.subject is string && data.term in [1, 2, 3] &&
+             data.mac >= 0 && data.mac <= 10 &&
+             data.npt >= 0 && data.npt <= 10;
+    }
+
+    function isValidFinalGrade(data) {
+      return hasOnlyAllowedFields(['studentId', 'enrollmentId', 'subject', 'mt1', 'mt2', 'mt3', 'mfd', 'ne', 'cf', 'nr', 'cfd']) &&
+             data.studentId is string && data.enrollmentId is string &&
+             data.subject is string;
+    }
+
+    function isValidAttendance(data) {
+      return hasOnlyAllowedFields(['studentId', 'enrollmentId', 'date', 'status']) &&
+             data.studentId is string && data.enrollmentId is string &&
+             data.date is string && data.status in ['present', 'absent', 'late'];
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(userId) || isAdmin());
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(userId) || isAdmin()) && 
+                    (request.resource.data.role == resource.data.role || isAdmin());
+    }
+
+    match /students/{studentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin();
+      allow update: if isAdmin() || isTeacher();
+      allow delete: if isAdmin();
+    }
+
+    match /enrollments/{enrollmentId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /teachers/{teacherId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /classes/{classId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /gradeEntries/{gradeEntryId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin() || isTeacher();
+      allow delete: if isAdmin();
+    }
+
+    match /finalGrades/{finalGradeId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin() || isTeacher();
+      allow delete: if isAdmin();
+    }
+
+    match /attendance/{attendanceId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin() || isTeacher();
+      allow delete: if isAdmin();
+    }
+
+    match /fees/{feeId} {
+      allow read: if isOwner(get(/databases/$(database)/documents/fees/$(feeId)).data.studentId) || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /transport/{transportId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /test/connection {
+      allow read: if true;
+    }
+  }
+}

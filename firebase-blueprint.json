@@ -1,0 +1,159 @@
+{
+  "entities": {
+    "User": {
+      "title": "Usuário",
+      "description": "Informações de perfil do usuário (administrador, professor ou pai).",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "ID único do Firebase Auth." },
+        "name": { "type": "string", "description": "Nome completo." },
+        "email": { "type": "string", "format": "email", "description": "Endereço de e-mail." },
+        "role": { "type": "string", "enum": ["admin", "teacher", "parent"], "description": "Papel no sistema." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Data de criação da conta." }
+      },
+      "required": ["uid", "name", "email", "role"]
+    },
+    "Student": {
+      "title": "Aluno",
+      "description": "Dados mestres do aluno (Dados de Identificação).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Nº de Processo (Chave Primária)." },
+        "name": { "type": "string", "description": "Nome completo do aluno." },
+        "gender": { "type": "string", "enum": ["M", "F"], "description": "Gênero." },
+        "birthDate": { "type": "string", "format": "date", "description": "Data de nascimento." },
+        "fatherName": { "type": "string", "description": "Nome do Pai." },
+        "motherName": { "type": "string", "description": "Nome da Mãe." },
+        "birthProvince": { "type": "string", "description": "Província de Nascimento." },
+        "birthMunicipality": { "type": "string", "description": "Município de Nascimento." },
+        "idDocumentNumber": { "type": "string", "description": "Nº do Documento de Identificação." },
+        "idDocumentIssueDate": { "type": "string", "format": "date", "description": "Data de Emissão do Documento." },
+        "guardianContact": { "type": "string", "description": "Contacto do Encarregado de Educação." },
+        "parentId": { "type": "string", "description": "ID do usuário vinculado (opcional)." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Data de cadastro." }
+      },
+      "required": ["id", "name", "gender", "birthDate", "guardianContact"]
+    },
+    "Enrollment": {
+      "title": "Matrícula",
+      "description": "Dados transacionais de matrícula por ano letivo.",
+      "type": "object",
+      "properties": {
+        "academicYear": { "type": "integer", "description": "Ano Lectivo (ex: 2026)." },
+        "studentId": { "type": "string", "description": "ID do Aluno (Nº de Processo)." },
+        "gradeLevel": { "type": "integer", "description": "Classe (1ª à 6ª)." },
+        "section": { "type": "string", "description": "Turma (A a Z)." },
+        "status": { "type": "string", "enum": ["active", "transferred", "dropped"], "description": "Estado da matrícula." }
+      },
+      "required": ["academicYear", "studentId", "gradeLevel", "section", "status"]
+    },
+    "Teacher": {
+      "title": "Professor",
+      "description": "Dados do corpo docente.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "ID do usuário vinculado." },
+        "name": { "type": "string", "description": "Nome completo." },
+        "subject": { "type": "string", "description": "Disciplina principal." },
+        "phone": { "type": "string", "description": "Telefone de contato." }
+      },
+      "required": ["userId", "name"]
+    },
+    "Class": {
+      "title": "Turma",
+      "description": "Organização de alunos por série e ano.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Nome da turma (ex: 1º Ano A)." },
+        "gradeLevel": { "type": "integer", "description": "Série escolar." },
+        "teacherId": { "type": "string", "description": "ID do professor regente." },
+        "year": { "type": "integer", "description": "Ano letivo." },
+        "section": { "type": "string", "description": "Turma (A-Z)." }
+      },
+      "required": ["name", "gradeLevel", "year", "section"]
+    },
+    "GradeEntry": {
+      "title": "Lançamento de Nota",
+      "description": "Registro de notas trimestrais (Mini-Pauta).",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string", "description": "ID do aluno." },
+        "enrollmentId": { "type": "string", "description": "ID da matrícula." },
+        "subject": { "type": "string", "description": "Disciplina." },
+        "term": { "type": "integer", "enum": [1, 2, 3], "description": "Trimestre." },
+        "mac": { "type": "number", "description": "Média de Avaliação Contínua (0-10)." },
+        "npt": { "type": "number", "description": "Nota de Prova Trimestral (0-10)." },
+        "mt": { "type": "number", "description": "Média Trimestral calculada." }
+      },
+      "required": ["studentId", "enrollmentId", "subject", "term", "mac", "npt"]
+    },
+    "FinalGrade": {
+      "title": "Pauta Final",
+      "description": "Consolidado final de notas e resultados.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string", "description": "ID do aluno." },
+        "enrollmentId": { "type": "string", "description": "ID da matrícula." },
+        "subject": { "type": "string", "description": "Disciplina." },
+        "mt1": { "type": "number", "description": "Média Trimestral 1." },
+        "mt2": { "type": "number", "description": "Média Trimestral 2." },
+        "mt3": { "type": "number", "description": "Média Trimestral 3." },
+        "mfd": { "type": "number", "description": "Média Final da Disciplina." },
+        "ne": { "type": "number", "description": "Nota de Exame (6ª Classe)." },
+        "cf": { "type": "number", "description": "Classificação Final." },
+        "nr": { "type": "number", "description": "Nota de Recurso." },
+        "cfd": { "type": "number", "description": "Classificação Final Definitiva." }
+      },
+      "required": ["studentId", "enrollmentId", "subject"]
+    },
+    "Attendance": {
+      "title": "Presença",
+      "description": "Registro diário de presença.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string", "description": "ID do aluno." },
+        "enrollmentId": { "type": "string", "description": "ID da matrícula." },
+        "date": { "type": "string", "format": "date", "description": "Data da aula." },
+        "status": { "type": "string", "enum": ["present", "absent", "late"], "description": "Status de presença." }
+      },
+      "required": ["studentId", "enrollmentId", "date", "status"]
+    },
+    "Fee": {
+      "title": "Mensalidade",
+      "description": "Controle de pagamentos de mensalidades.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string", "description": "ID do aluno." },
+        "amount": { "type": "number", "description": "Valor da mensalidade." },
+        "dueDate": { "type": "string", "format": "date", "description": "Data de vencimento." },
+        "status": { "type": "string", "enum": ["paid", "pending", "overdue"], "description": "Status do pagamento." },
+        "month": { "type": "string", "description": "Mês de referência." }
+      },
+      "required": ["studentId", "amount", "dueDate", "status", "month"]
+    },
+    "Transport": {
+      "title": "Transporte",
+      "description": "Gestão de rotas de transporte escolar.",
+      "type": "object",
+      "properties": {
+        "routeName": { "type": "string", "description": "Nome da rota (ex: Rota Norte)." },
+        "driverName": { "type": "string", "description": "Nome do motorista." },
+        "vehiclePlate": { "type": "string", "description": "Placa do veículo." },
+        "capacity": { "type": "integer", "description": "Capacidade total." }
+      },
+      "required": ["routeName", "driverName", "vehiclePlate"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": { "schema": "User", "description": "Perfis de usuários e gestão de cargos." },
+    "/students/{studentId}": { "schema": "Student", "description": "Dados mestres de alunos." },
+    "/enrollments/{enrollmentId}": { "schema": "Enrollment", "description": "Matrículas por ano letivo." },
+    "/teachers/{teacherId}": { "schema": "Teacher", "description": "Cadastro de professores." },
+    "/classes/{classId}": { "schema": "Class", "description": "Turmas escolares." },
+    "/gradeEntries/{gradeEntryId}": { "schema": "GradeEntry", "description": "Lançamento de notas trimestrais." },
+    "/finalGrades/{finalGradeId}": { "schema": "FinalGrade", "description": "Consolidado final de notas." },
+    "/attendance/{attendanceId}": { "schema": "Attendance", "description": "Registros de presença." },
+    "/fees/{feeId}": { "schema": "Fee", "description": "Mensalidades e pagamentos." },
+    "/transport/{transportId}": { "schema": "Transport", "description": "Rotas de transporte." }
+  }
+}
